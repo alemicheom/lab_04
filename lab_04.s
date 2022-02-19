@@ -22,8 +22,9 @@ PROCESSOR 16F887
   PSECT udata_shr            ; memoria compartida
     W_TEMP:        DS 1
     STATUS_TEMP:   DS 1 
-    CONT:          DS 1
-    DISP:          DS 1 
+    CONT:          DS 1      ; para tmr0
+    DISP:          DS 1      ; para que llegue a 10
+    CONT2:         DS 1      ; para segundo contador 
   
   
   
@@ -116,6 +117,11 @@ CONFIG_IO:
     BANKSEL PORTC 
     CLRF    PORTC
     
+    BANKSEL TRISD 
+    CLRF    TRISD               ; Contador 2 Display
+    BANKSEL PORTD 
+    CLRF    PORTD
+    
     BANKSEL OPTION_REG
     BCF     OPTION_REG, 7        ; RBPU (port B pull up enable bit)
     BSF     WPUB, 0              ; Weak pull up register bit portb 1
@@ -188,16 +194,38 @@ CONFIG_IO:
     MOVF    DISP, W		; valor de contador a w 
     CALL    TABLE	
     MOVWF   PORTC
+    
     INCF    DISP		; Incremento de contador
-    BTFSC   DISP, 4		; Verificamos que el contador no sea mayor a 15
-    CLRF    DISP		; Si es mayor a 15, reiniciamos contador
-    MOVF    DISP 
+    
+    CLRW                        ; para que solo llegue a 10
+    MOVLW 11
+    XORWF DISP,W
+    BTFSC STATUS, 2
+    CALL CONTADOR2
+    
+    ;BTFSC   DISP, 4		; Verificamos que el contador no sea mayor a 15
+    ;CLRF    DISP		; Si es mayor a 15, reiniciamos contador
+    ;MOVF    DISP 
     
     CLRF CONT
     CLRF STATUS
     
     RETURN
     
+    
+ CONTADOR2:
+    CALL RESET_TMR0
+    CLRF DISP 
+    
+    MOVF    CONT2, W		; contador 2
+    CALL    TABLE	
+    MOVWF   PORTD
+    INCF    CONT2		; Incremento de contador
+    BTFSC   CONT2, 4		; Verificamos que el contador no sea mayor a 15
+    CLRF    CONT2		; Si es mayor a 15, reiniciamos contador
+    MOVF    CONT2 
+    
+    RETURN
     
  ORG 200h
  
