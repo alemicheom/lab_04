@@ -25,6 +25,7 @@ PROCESSOR 16F887
     CONT:          DS 1      ; para tmr0
     DISP:          DS 1      ; para que llegue a 10
     CONT2:         DS 1      ; para segundo contador 
+    RESETF:        DS 1      ; para reset cuando llegue a 60 s
   
   
   
@@ -220,11 +221,20 @@ CONFIG_IO:
     MOVF    CONT2, W		; contador 2
     CALL    TABLE	
     MOVWF   PORTD
-    INCF    CONT2		; Incremento de contador
-    BTFSC   CONT2, 4		; Verificamos que el contador no sea mayor a 15
-    CLRF    CONT2		; Si es mayor a 15, reiniciamos contador
-    MOVF    CONT2 
+    INCF    CONT2		; Incremento de contador 
     
+    CLRW                        ; para reset final            
+    MOVLW 5
+    XORWF CONT2,W
+    BTFSC STATUS, 2
+    CALL RESETFINAL
+    
+    RETURN
+    
+ RESETFINAL:
+    CLRF CONT2
+    CLRF DISP
+    CALL RESET_TMR0
     RETURN
     
  ORG 200h
