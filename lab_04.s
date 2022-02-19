@@ -23,6 +23,7 @@ PROCESSOR 16F887
     W_TEMP:        DS 1
     STATUS_TEMP:   DS 1 
     CONT:          DS 1
+    DISP:          DS 1 
   
   
   
@@ -96,10 +97,11 @@ CONFIG_IO:
     CLRF    ANSELH               ; I/O digitales 
     
     BANKSEL TRISA 
-    BCF     TRISA, 0             ; OUTPUT contador 1
-    BCF     TRISA, 1             ; OUTPUT contador 1
-    BCF     TRISA, 2             ; OUTPUT contador 1
-    BCF     TRISA, 3             ; OUTPUT contador 1
+    BCF     TRISA, 0              ; OUTPUT contador 
+    BCF     TRISA, 1              ; OUTPUT contador 
+    BCF     TRISA, 2              ; OUTPUT contador 
+    BCF     TRISA, 3              ; OUTPUT contador 
+    
     BANKSEL PORTA
     CLRF    PORTA                ; Apagamos PORTA
     
@@ -110,10 +112,7 @@ CONFIG_IO:
     CLRF    PORTB
     
     BANKSEL TRISC 
-    BCF     TRISC, 0             ; Contador TMR0
-    BCF     TRISC, 1             ; Contador TMR0
-    BCF     TRISC, 2             ; Contador TMR0
-    BCF     TRISC, 3             ; Contador TMR0
+    CLRF    TRISC               ; Contador TMR0 Display
     BANKSEL PORTC 
     CLRF    PORTC
     
@@ -121,6 +120,10 @@ CONFIG_IO:
     BCF     OPTION_REG, 7        ; RBPU (port B pull up enable bit)
     BSF     WPUB, 0              ; Weak pull up register bit portb 1
     BSF     WPUB, 1              ; Weak pull up register bit portb 2
+    
+    CLRF    DISP        
+ 
+    RETURN
     
     return 
     
@@ -182,11 +185,44 @@ CONFIG_IO:
     BTFSS STATUS, 2
     RETURN
     
-    INCF PORTC
+    MOVF    DISP, W		; valor de contador a w 
+    CALL    TABLE	
+    MOVWF   PORTC
+    INCF    DISP		; Incremento de contador
+    BTFSC   DISP, 4		; Verificamos que el contador no sea mayor a 15
+    CLRF    DISP		; Si es mayor a 15, reiniciamos contador
+    MOVF    DISP 
+    
     CLRF CONT
     CLRF STATUS
     
     RETURN
+    
+    
+ ORG 200h
+ 
+ TABLE:
+    CLRF    PCLATH		; Limpiamos registro PCLATH
+    BSF	    PCLATH, 1		
+    ANDLW   0x0F		; llegar hasta 15
+    ADDWF   PCL			; Apuntamos el PC a ASCII de CONT
+    RETLW   11000000B		; 0	
+    RETLW   11111001B		; 1	
+    RETLW   10100100B           ; 2			
+    RETLW   10110000B      	; 3	
+    RETLW   10011001B		; 4	
+    RETLW   10010010B 		; 5	
+    RETLW   10000010B		; 6	
+    RETLW   11111000B           ; 7
+    RETLW   10000000B           ; 8
+    RETLW   10011000B           ; 9
+    RETLW   10001000B           ; A
+    RETLW   10000011B           ; B
+    RETLW   10100111B           ; C
+    RETLW   10100001B           ; d
+    RETLW   10000110B           ; E
+    RETLW   10001110B           ; F
+    
     
     
     
